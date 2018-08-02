@@ -5,43 +5,59 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var connection = '35.200.200.11:model-palace-211807:asia-south1:beetle-2018';
+var connection = 'postgres://clgfhgaukuolin:09efedd1bf282ea7dc4b9091b07f94155e1e4d9633a72dddff2ccf70b7ca83e0@ec2-54-83-22-244.compute-1.amazonaws.com:5432/dbhajskmdk85id?ssl=true';
 var db = pgp(connection);
 
-function user_register(req, res, next) {
+function userRegister(req, res, next) {
     db.none( 'INSERT INTO user_account(username, password, company_name, tel, email) VALUES(${username}, ${password}, ${company_name}, ${tel}, ${email})', req.body )
-        .then( (data) => {
-            console.log(data);            
+        .then( (data) => {       
             res.status(200).json({
                 status: 'Success!',
                 data: data,
                 message: 'Register Done!'
             })
         }).catch((err)=>{
-            return next(err)
-            console.log(err);            
+            return next(err)  
         })
 }
 
 function getUser(req, res, next) {
-    db.any('SELECT * FROM user_account')
-        .then((data) => {
-            res.status(200).json({
-                status: 'Success!',
-                data: data,
-                message: 'Get All User'
+    db.any('SELECT id FROM user_account WHERE username = ${username} and password = ${password}', req.body)
+        .then((response) => {
+            if (response.length != 0) {          
+                res.status(200).json({
+                    status: '200',
+                    res: response
             })
+            } else{
+                res.status(200).json({
+                    status: '200',
+                    res: 'false'
+            })
+            }
         }).catch((err) => {
             return next(err)
         })
 }
 
 function addDevice(req, res, next) {
-    db.none('INSERT INTO devices(user_id, uuid, password, tel) VALUES(${user_id}, ${uuid}, ${password}, ${tel})', req.body)
-        .then((data) => {
+    db.none('INSERT INTO devices(uuid, name, user_id) VALUES(${uuid}, ${name}, ${user_id})', req.body)
+        .then((response) => {
             res.status(200).json({
-                status: 'Success',
-                message: 'Device Added'
+                status: '200',
+                message: 'Device Added!'
+            })
+        }).catch((err) => {
+            return next(err)
+        })
+}
+
+function memberRegister(req, res, next) {
+    db.none('INSERT INTO device_info(uuid, password, tel) VALUES(${uuid}, ${password}, ${tel})', req.body)
+        .then((response) => {
+            res.status(200).json({
+                status:'200',
+                message: 'Register Success!'
             })
         }).catch((err) => {
             return next(err)
@@ -49,109 +65,41 @@ function addDevice(req, res, next) {
 }
 
 function getDevices(req, res, next) {
-    var id = 5;
-    db.any('SELECT * FROM devices WHERE user_id = $1', id)
-        .then((data) => {
+    db.any('SELECT * FROM devices WHERE user_id = ${user_id}', req.body)
+        .then((response) => {
             res.status(200).json({
-                status: 'Success!',
-                data: data,
-                message: 'Ok'
+                status: '200',
+                data: response
             })
         }).catch((err) => {
             return next(err)          
         })
 }
-/*function getAllPuppies(req, res, next) {
-    db.any('SELECT * FROM pups')
-        .then((data) => {
-            res.status(200).json({
-                status: 'success',
-                data: data,
-                message: 'Retreived all puppies'
-            })
+
+function unlock(req, res, next) {
+    db.any('SELECT uuid FROM device_info WHERE uuid = ${uuid} and password = ${password}', req.body)
+        .then((response) => {
+            if (response.length != 0) {          
+                res.status(200).json({
+                    status: '200',
+                    res: 'true'
+                })
+            } else{
+                res.status(200).json({
+                    status: '200',
+                    res: 'false'
+                })
+            }
         }).catch((err) => {
-            return next.err
+            return next(err)
         })
 }
-
-function getSinglePuppy(req, res, next) {
-    var pupID = parseInt(req.params.id);
-    db.one('select * from pups where id = $1', pupID)
-        .then(function (data) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    data: data,
-                    message: 'Retrieved ONE puppy'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-        });
-}
-
-function createPuppy(req, res, next) {
-    req.body.age = parseInt(req.body.age);
-    db.none( 'insert into pups(name, breed, age, sex)' + 'values(${name}, ${breed}, ${age}, ${sex})', req.body)
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Inserted one puppy'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-        });
-}
-
-function updatePuppy(req, res, next) {
-    db.none('update pups set name=$1, breed=$2, age=$3, sex=$4 where id=$5',
-        [req.body.name, req.body.breed, parseInt(req.body.age),
-        req.body.sex, parseInt(req.params.id)])
-        .then(function () {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: 'Updated puppy'
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-        });
-}
-
-function removePuppy(req, res, next) {
-    var pupID = parseInt(req.params.id);
-    db.result('delete from pups where id = $1', pupID)
-        .then(function (result) {
-            res.status(200)
-                .json({
-                    status: 'success',
-                    message: `Removed ${result.rowCount} puppy`
-                });
-        })
-        .catch(function (err) {
-            return next(err);
-        });
-}
-
-function getPuppiesBySex(req, res, next){
-    var sex = req.params.sex;
-    db.any( 'SELECT * FROM pups WHERE sex = $1', sex )
-    .then((data) => {
-        res.status(200).json({
-            status: 'Success',
-            data: data,
-            message: 'Retieved All Male Puppies'
-        })
-    })
-}*/
-
 
 module.exports = {
-    user_register: user_register,
+    userRegister: userRegister,
     getUser: getUser,
     addDevice: addDevice,
-    getDevices: getDevices
+    getDevices: getDevices,
+    unlock: unlock,
+    memberRegister: memberRegister
 }

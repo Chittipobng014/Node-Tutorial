@@ -9,10 +9,12 @@ router.put('/api/puppies/:id', db.updatePuppy);
 router.delete('/api/puppies/:id', db.removePuppy);
 router.get('/api/puppies/sex/:sex', db.getPuppiesBySex)
 */
-router.get('/user', db.getUser)
-router.get('/devices', db.getDevices)
-router.post('/reg', db.user_register)
-router.post('/device',db.addDevice)
+router.post('/getuser', db.getUser)
+router.post('/getdevices', db.getDevices)
+router.post('/unlock', db.unlock)
+router.post('/adddevice', db.addDevice)
+router.post('/addinfo', db.memberRegister)
+router.post('/adduser', db.userRegister)
 
 
 /* GET home page. */
